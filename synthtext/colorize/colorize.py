@@ -9,7 +9,8 @@ import os.path as osp
 import pickle as cp
 from PIL import Image
 
-from .poisson_reconstruct import blit_images
+from synthtext.synth.poisson_reconstruct import blit_images
+from synthtext.config import load_cfg
 
 
 def sample_weighted(p_dict):
@@ -86,11 +87,14 @@ class FontColor(object):
         col1 = self.sample_normal(data_col[:3], data_col[3:6])
         col2 = self.sample_normal(data_col[6:9], data_col[9:12])
 
+        # TODO: debug
         if nn < self.ncol:
-            return (col2, col1)
+            return (50, 100)
+            #return (col2, col1)
         else:
             # need to swap to make the second color close to the input backgroun color
-            return (col1, col2)
+            return (50, 100)
+            #return (col1, col2)
 
     def mean_color(self, arr):
         col = cv.cvtColor(arr, cv.COLOR_RGB2HSV)
@@ -121,9 +125,11 @@ class FontColor(object):
         col1 = np.squeeze(cv.cvtColor(col1[None, None, :], cv.COLOR_RGB2HSV))
         col2 = np.squeeze(cv.cvtColor(col2[None, None, :], cv.COLOR_RGB2HSV))
         h1, h2 = col1[0], col2[0]
-        if h2 < h1: h1, h2 = h2, h1  #swap
+        if h2 < h1: 
+            h1, h2 = h2, h1  #swap
         dh = h2 - h1
-        if dh < 127: dh = 255 - dh
+        if dh < 127: 
+            dh = 255 - dh
         col1[0] = h1 + dh / 2
         return np.squeeze(cv.cvtColor(col1[None, None, :], cv.COLOR_HSV2RGB))
 
@@ -140,20 +146,14 @@ class FontColor(object):
 
 
 class Colorize(object):
-    def __init__(self, model_dir='data'):
+    def __init__(self):
         # # get a list of background-images:
         # imlist = [osp.join(im_path,f) for f in os.listdir(im_path)]
         # self.bg_list = [p for p in imlist if osp.isfile(p)]
+        load_cfg(self)
         self.font_color = FontColor(
-            col_file=osp.join(model_dir, 'models/colors_new.cp'))
+            col_file=osp.join(self.data_dir, 'models/colors_new.cp'))
 
-        # probabilities of different text-effects:
-        self.p_bevel = 0.05  # add bevel effect to text
-        self.p_outline = 0.05  # just keep the outline of the text
-        self.p_drop_shadow = 0.15
-        self.p_border = 0.15
-        self.p_displacement = 0.30  # add background-based bump-mapping
-        self.p_texture = 0.0  # use an image for coloring text
 
     def drop_shadow(self, alpha, theta, shift, size, op=0.80):
         """

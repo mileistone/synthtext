@@ -15,6 +15,8 @@ import pygame
 import pygame.locals
 import cv2
 
+from synthtext.config import load_cfg
+
 
 def sample_weighted(p_dict):
     ps = p_dict.keys()
@@ -59,16 +61,19 @@ def crop_safe(arr, rect, bbs=[], pad=0):
 
 
 class BaselineState(object):
+
     curve = lambda this, a: lambda x: a * x * x
     differential = lambda this, a: lambda x: 2 * a * x
-    a = [0.50, 0.05]
+
+    def __init__(self):
+        load_cfg(self)
 
     def get_sample(self):
         """
         Returns the functions for the curve and differential for a and b
         """
         sgn = 1.0
-        if np.random.rand() < 0.5:
+        if np.random.rand() < self.p_sgn:
             sgn = -1
 
         a = self.a[1] * np.random.randn() + sgn * self.a[0]
@@ -84,32 +89,19 @@ class RenderFont(object):
         Output is a binary mask matrix cropped closesly with the font.
         Also, outputs ground-truth bounding boxes and text string
     """
-    def __init__(self, data_dir='data'):
+    def __init__(self):
         # distribution over the type of text:
-        # whether to get a single word, paragraph or a line:
-        self.p_text = {0.0: 'WORD', 0.0: 'LINE', 1.0: 'PARA'}
+        load_cfg(self)
 
-        ## TEXT PLACEMENT PARAMETERS:
-        self.f_shrink = 0.90
-        self.max_shrink_trials = 5  # 0.9^5 ~= 0.6
-        # the minimum number of characters that should fit in a mask
-        # to define the maximum font height.
-        self.min_nchar = 2
-        self.min_font_h = 16  #px : 0.6*12 ~ 7px <= actual minimum height
-        self.max_font_h = 120  #px
-        self.p_flat = 0.10
-
-        # curved baseline:
-        self.p_curved = 1.0
         self.baselinestate = BaselineState()
 
         # text-source : gets english text:
         self.text_source = TextSource(min_nchar=self.min_nchar,
-                                      fn=osp.join(data_dir,
+                                      fn=osp.join(self.data_dir,
                                                   'newsgroup/newsgroup.txt'))
 
         # get font-state object:
-        self.font_state = FontState(data_dir)
+        self.font_state = FontState()
 
         pygame.init()
 
@@ -386,7 +378,7 @@ class RenderFont(object):
             # sample text:
             text_type = sample_weighted(self.p_text)
             text = self.text_source.sample(nline, nchar, text_type)
-            print(text)
+            #print(text)
             if len(text) == 0 or np.any([len(line) == 0 for line in text]):
                 continue
             #print colorize(Color.GREEN, text)
@@ -420,28 +412,12 @@ class FontState(object):
     """
     Defines the random state of the font rendering  
     """
-    size = [50, 10]  # normal dist mean, std
-    underline = 0.05
-    strong = 0.5
-    oblique = 0.2
-    wide = 0.5
-    strength = [0.05, 0.1]  # uniform dist in this interval
-    underline_adjustment = [1.0, 2.0]  # normal dist mean, std
-    kerning = [
-        2, 5, 0, 20
-    ]  # beta distribution alpha, beta, offset, range (mean is a/(a+b))
-    border = 0.25
-    random_caps = -1  ## don't recapitalize : retain the capitalization of the lexicon
-    capsmode = [str.lower, str.upper,
-                str.capitalize]  # lower case, upper case, proper noun
-    curved = 0.2
-    random_kerning = 0.2
-    random_kerning_amount = 0.1
 
-    def __init__(self, data_dir='data'):
+    def __init__(self):
+        load_cfg(self)
 
-        char_freq_path = osp.join(data_dir, 'models/char_freq.cp')
-        font_model_path = osp.join(data_dir, 'models/font_px2pt.cp')
+        char_freq_path = osp.join(self.data_dir, 'models/char_freq.cp')
+        font_model_path = osp.join(self.data_dir, 'models/font_px2pt.cp')
 
         # get character-frequencies in the English language:
         with open(char_freq_path, 'rb') as f:
@@ -452,9 +428,9 @@ class FontState(object):
             self.font_model = cp.load(f)
 
         # get the names of fonts to use:
-        self.FONT_LIST = osp.join(data_dir, 'fonts/fontlist.txt')
+        self.FONT_LIST = osp.join(self.data_dir, 'fonts/fontlist.txt')
         self.fonts = [
-            os.path.join(data_dir, 'fonts', f.strip())
+            os.path.join(self.data_dir, 'fonts', f.strip())
             for f in open(self.FONT_LIST)
         ]
 
@@ -567,14 +543,7 @@ class TextSource(object):
         with open(fn, 'r') as f:
             self.txt = [l.strip() for l in f.readlines()]
 
-        # distribution over line/words for LINE/PARA:
-        self.p_line_nline = np.array([0.85, 0.10, 0.05])
-        self.p_line_nword = [4, 3, 12]  # normal: (mu, std)
-        self.p_para_nline = [1.0, 1.0]  #[1.7,3.0] # beta: (a, b), max_nline
-        self.p_para_nword = [1.7, 3.0, 10]  # beta: (a,b), max_nword
-
-        # probability to center-align a paragraph:
-        self.center_para = 0.5
+        load_cfg(self)
 
     def check_symb_frac(self, txt, f=0.35):
         """

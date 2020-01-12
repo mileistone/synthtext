@@ -5,7 +5,7 @@ data stored in h5 data-bases
 import os
 import os.path as osp
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 import h5py
@@ -24,13 +24,14 @@ def viz_textbb(text_im, charBB_list, wordBB, alpha=1.0):
     H, W = text_im.shape[:2]
 
     # plot the character-BB:
-    for i in range(len(charBB_list)):
-        bbs = charBB_list[i]
-        ni = bbs.shape[-1]
-        for j in range(ni):
-            bb = bbs[:, :, j]
-            bb = np.c_[bb, bb[:, 0]]
-            plt.plot(bb[0, :], bb[1, :], 'r', alpha=alpha / 2)
+    if False:
+        for i in range(len(charBB_list)):
+            bbs = charBB_list[i]
+            ni = bbs.shape[-1]
+            for j in range(ni):
+                bb = bbs[:, :, j]
+                bb = np.c_[bb, bb[:, 0]]
+                plt.plot(bb[0, :], bb[1, :], 'r', alpha=alpha / 2)
 
     # plot the word-BB:
     for i in range(wordBB.shape[-1]):
@@ -45,7 +46,7 @@ def viz_textbb(text_im, charBB_list, wordBB, alpha=1.0):
     plt.gca().set_xlim([0, W - 1])
     plt.gca().set_ylim([H - 1, 0])
     plt.show(block=False)
-    plt.savefig('xx.png')
+    #plt.savefig('xx.png')
 
 
 def viz_all(db):
@@ -63,7 +64,7 @@ def viz_all(db):
         print('  ** no. of words : ', wordBB.shape[-1])
         print('  ** text         : ', txt)
 
-        if 1:  #'q' in input('next? ('q' to exit) : '):
+        if 'q' in input('next? ("q" to exit): '):
             break
 
 

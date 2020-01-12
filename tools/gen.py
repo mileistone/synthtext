@@ -13,7 +13,6 @@ sys.path.insert(0, './')
 
 from synthtext.render import Renderer
 from synthtext.common import set_random_seed
-from synthtext.viz import viz_all
 
 
 def get_data(db_fp):
@@ -74,8 +73,9 @@ def add_res_to_db(imgname, res, db):
 
 def main():
     ## Define some configuration variables:
+    viz = True
     nimg = 1  # no. of images to use for generation (-1 to use all available):
-    ninstance = 1  # no. of times to use the same image
+    ninstance = 30000  # no. of times to use the same image
     secs_per_img = 5  #max time per image in seconds
 
     # path to the data-file, containing image, depth and segmentation:
@@ -116,12 +116,11 @@ def main():
         label = in_db['seg'][imname].attrs['label']
         
         print('%d of %d' % (i, nimg - 1))
-        res = render(engine, img, depth, seg, area, label, ninstance)
+        res = render(engine, img, depth, seg, area, label, ninstance, viz)
 
         if len(res) > 0:
             # non-empty : successful in placing text:
             add_res_to_db(imname, res, out_db)
-            viz_all(out_db)
             break
     in_db.close()
     out_db.close()
