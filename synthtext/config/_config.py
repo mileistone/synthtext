@@ -1,9 +1,13 @@
 import numpy as np
 
-data_dir = 'data'
 
+debug = True
+data_dir = 'data'
+min_nchar = 2
 
 RenderFont = dict(
+    debug=True,
+    min_nchar=min_nchar,
     # whether to get a single word, paragraph or a line:
     data_dir=data_dir,
     p_text={
@@ -14,9 +18,6 @@ RenderFont = dict(
     ## TEXT PLACEMENT PARAMETERS:
     f_shrink=0.90,
     max_shrink_trials=5,
-    # the minimum number of characters that should fit in a mask
-    # to define the maximum font height.
-    min_nchar=2,
     # px : 0.6*12 ~ 7px <= actual minimum height
     # 16
     min_font_h=25,
@@ -29,12 +30,14 @@ RenderFont = dict(
 
 
 BaselineState = dict(
+    debug=debug,
     a=[0.50, 0.50],
     p_sgn=0.5,
 )
 
 
 FontState = dict(
+    debug=debug,
     data_dir=data_dir,
     # normal dist mean, std
     size=[50, 10],
@@ -52,14 +55,16 @@ FontState = dict(
     # don't recapitalize : retain the capitalization of the lexicon
     random_caps=-1,
     curved=0,  #0.2,
-    random_kerning=0.2,
-    random_kerning_amount=0.1,
     # lower case, upper case, proper noun
     capsmode=[str.lower, str.upper, str.capitalize],
 )
 
 
 TextSource = dict(
+    data_dir=data_dir,
+    # the minimum number of characters that should fit in a mask
+    # to define the maximum font height.
+    min_nchar=min_nchar,
     # distribution over line/words for LINE/PARA:
     p_line_nline=np.array([0.85, 0.10, 0.05]),
     # normal: (mu, std)

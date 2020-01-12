@@ -157,10 +157,8 @@ class Renderer(object):
         return cv2.GaussianBlur(text_mask, (ksz, ksz), bsz)
 
     def place_text(self, rgb, collision_mask, H, Hinv):
-        font = self.text_renderer.font_state.sample()
-        font = self.text_renderer.font_state.init_font(font)
 
-        render_res = self.text_renderer.render_sample(font, collision_mask)
+        render_res = self.text_renderer.render_sample(collision_mask)
         if render_res is None:  # rendering not successful
             return  #None
         else:
