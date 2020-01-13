@@ -14,13 +14,13 @@ import cv2
 
 from synthtext.config import load_cfg
 
-from .font import FontState, BaselineState
-from .corpora import TextSource
+from .text_state import TextState, BaselineState
+from .corpora import Corpora
 from .utils import sample_weighted, move_bb, crop_safe
 from .viz import visualize_bb
 
 
-class RenderFont(object):
+class TextRenderer(object):
     """
     Outputs a rasterized font sample.
         Output is a binary mask matrix cropped closesly with the font.
@@ -33,10 +33,10 @@ class RenderFont(object):
         self.baselinestate = BaselineState()
 
         # text-source : gets english text:
-        self.text_source = TextSource()
+        self.corpora = Corpora()
 
         # get font-state object:
-        self.font_state = FontState()
+        self.text_state = TextState()
 
         pygame.init()
 
@@ -95,7 +95,7 @@ class RenderFont(object):
                                   pad=5)
         surf_arr = surf_arr.swapaxes(0, 1)
         #self.visualize_bb(surf_arr,bbs)
-        return surf_arr, words, bbs
+        return surf_arr, words, bbs, False
     
     def render_curved(self, font, word_text):
         """
@@ -105,9 +105,11 @@ class RenderFont(object):
         isword = len(word_text.split()) == 1
 
         # do curved iff, the length of the word <= 10
-        rand_num = 0 if self.debug else np.random.rand() 
+        rand_num = np.random.rand() 
         if not isword or wl > 10 or rand_num > self.p_curved:
+            #print('no curve')
             return self.render_multiline(font, word_text)
+        #print('curve')
 
         # create the surface:
         lspace = font.get_sized_height() + 1
@@ -196,7 +198,7 @@ class RenderFont(object):
                                   bbs,
                                   pad=5)
         surf_arr = surf_arr.swapaxes(0, 1)
-        return surf_arr, word_text, bbs
+        return surf_arr, word_text, bbs, True
 
     def get_nline_nchar(self, mask_size, font_height, font_width):
         """
@@ -226,7 +228,7 @@ class RenderFont(object):
                 return back_arr, locs[:i], bbs[:i], order[:i]
 
             minloc = np.transpose(np.nonzero(safemask))
-            rand_num = 0 if self.debug else np.random.choice(minloc.shape[0])
+            rand_num = np.random.choice(minloc.shape[0])
             loc = minloc[rand_num, :]
             locs[i] = loc
 
@@ -251,7 +253,7 @@ class RenderFont(object):
             rnd = np.random.rand()
         else:
             rnd = np.random.beta(2.0, 2.0)
-        rnd = 0 if self.debug else rnd
+        rnd = rnd
 
         h_range = h_max - h_min
         f_h = np.floor(h_min + h_range * rnd)
@@ -271,16 +273,16 @@ class RenderFont(object):
             coords[1, 3, i] += bbs[i, 3]
         return coords
     
-    def render_sample(self, mask):
+    def render_text(self, mask):
         """
         Places text in the "collision-free" region as indicated
         in the mask -- 255 for unsafe, 0 for safe.
         The text is rendered using FONT, the text content is TEXT.
         """
-        font = self.font_state.sample()
+        font = self.text_state.sample_font_state()
         #H,W = mask.shape
         H, W = self.robust_HW(mask)
-        f_asp = self.font_state.get_aspect_ratio(font)
+        f_asp = self.text_state.get_font_aspect_ratio(font)
 
         # find the maximum height in pixels:
         max_font_h = min(0.9 * H, (1 / f_asp) * W / (self.min_nchar + 1))
@@ -299,7 +301,7 @@ class RenderFont(object):
             f_h_px = self.sample_font_height_px(self.min_font_h, max_font_h)
             #print "font-height : %.2f (min: %.2f, max: %.2f)"%(f_h_px, self.min_font_h,max_font_h)
             # convert from pixel-height to font-point-size:
-            f_h = self.font_state.get_font_size(font, f_h_px)
+            f_h = self.text_state.get_font_size(font, f_h_px)
 
             # update for the loop
             max_font_h = f_h_px
@@ -315,15 +317,15 @@ class RenderFont(object):
             assert nline >= 1 and nchar >= self.min_nchar
 
             # sample text:
-            text_type = sample_weighted(self.p_text, self.debug)
-            text = self.text_source.sample(nline, nchar, text_type)
+            text_type = sample_weighted(self.p_text)
+            text = self.corpora.sample_text(nline, nchar, text_type)
             #print(text)
             if len(text) == 0 or np.any([len(line) == 0 for line in text]):
                 continue
             #print colorize(Color.GREEN, text)
 
             # render the text:
-            txt_arr, txt, bb = self.render_curved(font, text)
+            txt_arr, txt, bb, curve_flag = self.render_curved(font, text)
             bb = self.bb_xywh2coords(bb)
 
             # make sure that the text-array is not bigger than mask array:
@@ -334,7 +336,7 @@ class RenderFont(object):
             # position the text within the mask:
             text_mask, loc, bb, _ = self.place_text([txt_arr], mask, [bb])
             if len(loc) > 0:  #successful in placing the text collision-free:
-                return text_mask, loc[0], bb[0], text
+                return text_mask, loc[0], bb[0], text, curve_flag
         return  #None
 
 

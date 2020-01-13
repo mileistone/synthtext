@@ -11,7 +11,7 @@ import wget
 
 sys.path.insert(0, './')
 
-from synthtext.render import Renderer
+from synthtext.renderer import Renderer
 from synthtext.common import set_random_seed
 
 
@@ -22,21 +22,16 @@ def get_data(db_fp):
     """
     data_url = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
     if not osp.exists(db_fp):
-        try:
-            print('Downloading data (56 M) from: ' + data_url)
-            sys.stdout.flush()
-            out_fname = 'data.tar.gz'
-            wget.download(data_url, out=out_fname)
-            tar = tarfile.open(out_fname)
-            tar.extractall()
-            tar.close()
-            os.remove(out_fname)
-            print('Data saved at:' + db_fp)
-            sys.stdout.flush()
-        except:
-            print('Data not found and have problems downloading')
-            sys.stdout.flush()
-            sys.exit(-1)
+        print('Downloading data (56 M) from: ' + data_url)
+        sys.stdout.flush()
+        out_fname = 'data.tar.gz'
+        wget.download(data_url, out=out_fname)
+        tar = tarfile.open(out_fname)
+        tar.extractall()
+        tar.close()
+        os.remove(out_fname)
+        print('Data saved at:' + db_fp)
+        sys.stdout.flush()
     # open the h5 file and return:
     return h5py.File(db_fp, 'r')
 
@@ -47,7 +42,7 @@ def render(engine, img, depth, seg, area, label, ninstance, viz=False):
     img = np.array(img.resize(sz, Image.ANTIALIAS))
     seg = np.array(Image.fromarray(seg).resize(sz, Image.NEAREST))
 
-    res = engine.render_text(img,
+    res = engine.render(img,
                           depth,
                           seg,
                           area,
@@ -74,8 +69,8 @@ def add_res_to_db(imgname, res, db):
 def main():
     ## Define some configuration variables:
     viz = True
-    nimg = 1  # no. of images to use for generation (-1 to use all available):
-    ninstance = 30000  # no. of times to use the same image
+    nimg = -1  # no. of images to use for generation (-1 to use all available):
+    ninstance = 3  # no. of times to use the same image
     secs_per_img = 5  #max time per image in seconds
 
     # path to the data-file, containing image, depth and segmentation:
@@ -99,7 +94,7 @@ def main():
     imnames = sorted(in_db['image'].keys())
     nimg = len(imnames) if nimg < 0 else min(len(imnames), nimg)
 
-    engine = Renderer(resource_dir, max_time=secs_per_img)
+    engine = Renderer()
     for i in range(nimg):
         imname = imnames[i]
         # get the image:
@@ -121,7 +116,6 @@ def main():
         if len(res) > 0:
             # non-empty : successful in placing text:
             add_res_to_db(imname, res, out_db)
-            break
     in_db.close()
     out_db.close()
 

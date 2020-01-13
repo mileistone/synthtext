@@ -3,6 +3,8 @@ import pickle
 
 import cv2
 
+from synthtext.config import load_cfg
+
 
 class FontColor(object):
     """
@@ -24,7 +26,8 @@ class FontColor(object):
         sample from a normal distribution centered around COL_MEAN 
         with standard deviation = COL_STD.
         """
-        col_sample = col_mean + col_std * np.random.randn()
+        rand_num = np.random.randn()
+        col_sample = col_mean + col_std * rand_num 
         return np.clip(col_sample, 0, 255).astype('uint8')
 
     def sample_from_data(self, bg_mat):
@@ -52,12 +55,10 @@ class FontColor(object):
 
         # TODO: debug
         if nn < self.ncol:
-            return (50, 100)
-            #return (col2, col1)
+            return (col2, col1)
         else:
             # need to swap to make the second color close to the input backgroun color
-            return (50, 100)
-            #return (col1, col2)
+            return (col1, col2)
 
     def complement(self, rgb_color):
         """

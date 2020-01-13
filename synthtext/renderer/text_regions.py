@@ -14,14 +14,6 @@ class TextRegions(object):
     def __init__(self):
         load_cfg(self)
 
-    def filter_rectified(self, mask):
-        """
-        mask : 1 where 'ON', 0 where 'OFF'
-        """
-        wx = np.median(np.sum(mask, axis=0))
-        wy = np.median(np.sum(mask, axis=1))
-        return wx > self.minW and wy > self.minW
-
     def get_hw(self, pt, return_rot=False):
         pt = pt.copy()
         R = synth.unrotate2d(pt)
@@ -37,8 +29,8 @@ class TextRegions(object):
         Apply the filter.
         The final list is ranked by area.
         """
-        good = label[area > self.minArea]
-        area = area[area > self.minArea]
+        good = label[area > self.min_area]
+        area = area[area > self.min_area]
         filt, R = [], []
         for idx, i in enumerate(good):
             mask = seg == i
@@ -49,9 +41,9 @@ class TextRegions(object):
             box = np.array(cv2.boxPoints(rect))
             h, w, rot = self.get_hw(box, return_rot=True)
 
-            f = (h > self.minHeight and w > self.minWidth
-                 and self.minAspect < w / h < self.maxAspect
-                 and area[idx] / w * h > self.pArea)
+            f = (h > self.min_height and w > self.min_width
+                 and self.min_aspect < w / h < self.max_aspect
+                 and area[idx] / w * h > self.p_area)
             filt.append(f)
             R.append(rot)
 
@@ -145,5 +137,12 @@ class TextRegions(object):
         regions = self.filter_depth(xyz, seg, regions)
         return regions
 
+    def filter_rectified(self, mask):
+        """
+        mask : 1 where 'ON', 0 where 'OFF'
+        """
+        wx = np.median(np.sum(mask, axis=0))
+        wy = np.median(np.sum(mask, axis=1))
+        return wx > self.min_rectified_w and wy >self. min_rectified_w
 
 TEXT_REGIONS = TextRegions()

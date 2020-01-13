@@ -1,11 +1,9 @@
 import numpy as np
 
 
-def sample_weighted(p_dict, debug):
+def sample_weighted(p_dict):
     ps = list(p_dict.keys())
     key = np.random.choice(ps)
-    if debug:
-        key = ps[0]
     return p_dict[key]
 
 

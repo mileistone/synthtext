@@ -8,7 +8,7 @@ from pygame import freetype
 from synthtext.config import load_cfg
 
 
-class FontState(object):
+class TextState(object):
     """
     Defines the random state of the font rendering  
     """
@@ -49,58 +49,55 @@ class FontState(object):
         font.origin = True
         return font
 
-    def sample(self):
+    def sample_font_state(self):
         """
         Samples from the font state distribution
         """
-        debug = self.debug
-
         font_state = dict()
 
-        idx = 0 if debug else int(np.random.randint(0, len(self.fonts)))
+        idx = int(np.random.randint(0, len(self.fonts)))
         font_state['font'] = self.fonts[idx]
 
-        idx = 0 if debug else int(np.random.randint(0, len(self.capsmode)))
-        font_state['capsmode'] = self.capsmode[idx]
+        #idx = int(np.random.randint(0, len(self.capsmode)))
+        #font_state['capsmode'] = self.capsmode[idx]
 
+        std = np.random.randn() 
+        font_state['size'] = self.size[1] * std  + self.size[0]
 
-        var = 0 if debug else np.random.randn() 
-        font_state['size'] = self.size[1] * var  + self.size[0]
-
-        var = 0 if debug else np.random.randn()
+        std = np.random.randn()
         font_state['underline_adjustment'] = max(2.0, min(-2.0, 
-                self.underline_adjustment[1] * var +
+                self.underline_adjustment[1] * std +
                 self.underline_adjustment[0]))
 
-        var = 0 if debug else np.random.rand()
-        font_state['strength'] = (self.strength[1] - self.strength[0]) * var + \
+        std = np.random.rand()
+        font_state['strength'] = (self.strength[1] - self.strength[0]) * std + \
                 self.strength[0]
 
-        var = 0 if debug else np.random.beta(self.kerning[0], self.kerning[1])
-        font_state['char_spacing'] = int(self.kerning[3] * var + self.kerning[2])
+        std = np.random.beta(self.kerning[0], self.kerning[1])
+        font_state['char_spacing'] = int(self.kerning[3] * std + self.kerning[2])
 
-        flag = False if debug else np.random.rand() < self.underline
+        flag = np.random.rand() < self.underline
         font_state['underline'] = flag
 
-        flag = False if debug else np.random.rand() < self.strong
+        flag = np.random.rand() < self.strong
         font_state['strong'] = flag
 
-        flag = False if debug else np.random.rand() < self.oblique
+        flag = np.random.rand() < self.oblique
         font_state['oblique'] = flag
 
-        flag = False if debug else np.random.rand() < self.border
-        font_state['border'] = flag
+        #flag = np.random.rand() < self.border
+        #font_state['border'] = flag
 
-        flag = False if debug else np.random.rand() < self.random_caps
-        font_state['random_caps'] = flag
+        #flag = np.random.rand() < self.random_caps
+        #font_state['random_caps'] = flag
 
-        flag = False if debug else np.random.rand() < self.curved
-        font_state['curved'] = flag
+        #flag = np.random.rand() < self.curved
+        #font_state['curved'] = flag
 
         font = self.init_font(font_state)
         return font
 
-    def get_aspect_ratio(self, font, size=None):
+    def get_font_aspect_ratio(self, font, size=None):
         """
         Returns the median aspect ratio of each character of the font.
         """
@@ -150,11 +147,7 @@ class BaselineState(object):
             sgn = -1
 
         a = self.a[1] * np.random.randn() + sgn * self.a[0]
-        if self.debug:
-            a = 0
         return {
             'curve': self.curve(a),
             'diff': self.differential(a),
         }
-
-

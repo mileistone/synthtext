@@ -5,7 +5,7 @@ import os.path as osp
 from synthtext.config import load_cfg
 
 
-class TextSource(object):
+class Corpora(object):
     """
     Provides text for words, paragraphs, sentences.
     """
@@ -67,17 +67,17 @@ class TextSource(object):
     def get_lines(self, nline, nword, nchar_max, f=0.35, niter=100):
         def h_lines(niter=100):
             lines = ['']
-            iter = 0
-            while not np.all(self.is_good(lines, f)) and iter < niter:
-                iter += 1
+            iter_ = 0
+            while not np.all(self.is_good(lines, f)) and iter_ < niter:
+                iter_ += 1
                 line_start = np.random.choice(len(self.txt) - nline)
                 lines = [self.txt[line_start + i] for i in range(nline)]
             return lines
 
         lines = ['']
-        iter = 0
-        while not np.all(self.is_good(lines, f)) and iter < niter:
-            iter += 1
+        iter_ = 0
+        while not np.all(self.is_good(lines, f)) and iter_ < niter:
+            iter_ += 1
             lines = h_lines(niter=100)
             # get words per line:
             nline = len(lines)
@@ -85,7 +85,7 @@ class TextSource(object):
                 words = lines[i].split()
                 dw = len(words) - nword[i]
                 if dw > 0:
-                    first_word_index = random.choice(range(dw + 1))
+                    first_word_index = np.random.choice(range(dw + 1))
                     lines[i] = ' '.join(
                         words[first_word_index:first_word_index + nword[i]])
 
@@ -102,20 +102,20 @@ class TextSource(object):
         else:
             return lines
 
-    def sample(self, nline_max, nchar_max, kind='WORD'):
+    def sample_text(self, nline_max, nchar_max, kind='WORD'):
         return self.fdict[kind](nline_max, nchar_max)
 
     def sample_word(self, nline_max, nchar_max, niter=100):
         rand_line = self.txt[np.random.choice(len(self.txt))]
         words = rand_line.split()
-        rand_word = random.choice(words)
+        rand_word = np.random.choice(words)
 
         iter_ = 0
         while iter_ < niter and (not self.is_good([rand_word])[0]
                                 or len(rand_word) > nchar_max):
             rand_line = self.txt[np.random.choice(len(self.txt))]
             words = rand_line.split()
-            rand_word = random.choice(words)
+            rand_word = np.random.choice(words)
             iter_ += 1
 
         if not self.is_good([rand_word])[0] or len(rand_word) > nchar_max:

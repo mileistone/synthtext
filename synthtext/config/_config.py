@@ -1,43 +1,63 @@
 import numpy as np
 
 
-debug = True
 data_dir = 'data'
 min_nchar = 2
 
-RenderFont = dict(
-    debug=True,
+
+## renderer
+# renderer
+Renderer = dict(
+    data_dir=data_dir,
+    min_char_height=8,  #px
+    min_asp_ratio=0.4,  #
+    max_text_regions=7,
+    max_time=5,
+)
+
+# text_regions
+TextRegions = dict(
+    min_width=30, #px
+    min_height=30,   #px
+    min_aspect=0.3,   # w > 0.3*h
+    max_aspect=7, 
+    min_area=100,   # number of pix
+    p_area=0.60,   # area_obj/area_minrect >= 0.6
+    # RANSAC planar fitting params:
+    dist_thresh=0.10,   # m
+    num_inlier=90, 
+    ransac_fit_trials=100, 
+    min_z_projection=0.25, 
+    min_rectified_w=20,
+)
+
+
+## text_renderer
+# text_renderer
+TextRenderer = dict(
+    data_dir=data_dir,
     min_nchar=min_nchar,
     # whether to get a single word, paragraph or a line:
-    data_dir=data_dir,
     p_text={
         0.0: 'WORD',
         0.0: 'LINE',
         1.0: 'PARA'
     },
     ## TEXT PLACEMENT PARAMETERS:
-    f_shrink=0.90,
+    #f_shrink=0.90,
     max_shrink_trials=5,
     # px : 0.6*12 ~ 7px <= actual minimum height
     # 16
-    min_font_h=25,
+    min_font_h=16, #25,
     # 120
-    max_font_h=60,
+    max_font_h=120, #60,
     p_flat=0.10,
     # curved baseline:
-    p_curved=0,  # 1.0
+    p_curved=1.0,  # 1.0
 )
 
-
-BaselineState = dict(
-    debug=debug,
-    a=[0.50, 0.50],
-    p_sgn=0.5,
-)
-
-
-FontState = dict(
-    debug=debug,
+# text_state
+TextState = dict(
     data_dir=data_dir,
     # normal dist mean, std
     size=[50, 10],
@@ -51,16 +71,22 @@ FontState = dict(
     underline_adjustment=[1.0, 2.0],
     # beta distribution alpha, beta, offset, range (mean is a/(a+b))
     kerning=[2, 5, 0, 20],
-    border=0.25,
+    #border=0.25,
     # don't recapitalize : retain the capitalization of the lexicon
-    random_caps=-1,
-    curved=0,  #0.2,
+    #random_caps=-1,
+    #curved=0,  #0.2,
     # lower case, upper case, proper noun
-    capsmode=[str.lower, str.upper, str.capitalize],
+    #capsmode=[str.lower, str.upper, str.capitalize],
 )
 
+# text_state
+BaselineState = dict(
+    a=[0.5, 0.05], #a=[0.5, 0.05],
+    p_sgn=0.5,
+)
 
-TextSource = dict(
+# corpora
+Corpora = dict(
     data_dir=data_dir,
     # the minimum number of characters that should fit in a mask
     # to define the maximum font height.
@@ -78,34 +104,18 @@ TextSource = dict(
 )
 
 
+## colorizer
 # probabilities of different text-effects:
-Colorize = dict(
+Colorizer = dict(
     data_dir=data_dir,
     # add bevel effect to text
-    p_bevel=0, #0.05,
+    #p_bevel=0, #0.05,
     # just keep the outline of the text
-    p_outline=0, #0.05,
+    #p_outline=0, #0.05,
     p_drop_shadow=0, #0.15,
     p_border=0, #0.15,
     # add background-based bump-mapping
-    p_displacement=0, #0.30,
+    #p_displacement=0, #0.30,
     # use an image for coloring text
-    p_texture=0,
-)
-
-
-TextRegions = dict(
-    minWidth=30, #px
-    minHeight=30,   #px
-    minAspect=0.3,   # w > 0.3*h
-    maxAspect=7, 
-    minArea=100,   # number of pix
-    pArea=0.60,   # area_obj/area_minrect >= 0.6
-
-    # RANSAC planar fitting params:
-    dist_thresh=0.10,   # m
-    num_inlier=90, 
-    ransac_fit_trials=100, 
-    min_z_projection=0.25, 
-    minW=20,
+    #p_texture=0,
 )

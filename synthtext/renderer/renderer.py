@@ -12,9 +12,10 @@ import traceback, itertools
 import cv2
 
 import synthtext.synth as synth
-import synthtext.text as text_utils
-from synthtext.colorize import Colorize
+import synthtext.text_renderer as text_renderer
+from synthtext.colorizer import Colorizer
 from synthtext.common import TimeoutException, time_limit
+from synthtext.config import load_cfg
 
 from .text_regions import TEXT_REGIONS
 from .utils import rescale_frontoparallel, get_text_placement_mask
@@ -22,16 +23,10 @@ from .viz import viz_textbb
 
 
 class Renderer(object):
-    def __init__(self, data_dir, max_time=None):
-        self.text_renderer = text_utils.RenderFont()
-        self.colorizer = Colorize()
-
-        self.min_char_height = 8  #px
-        self.min_asp_ratio = 0.4  #
-
-        self.max_text_regions = 7
-
-        self.max_time = max_time
+    def __init__(self):
+        load_cfg(self)
+        self.text_render = text_renderer.TextRenderer()
+        self.colorizer = Colorizer()
 
     def filter_regions(self, regions, filt):
         """
@@ -158,17 +153,26 @@ class Renderer(object):
 
     def place_text(self, rgb, collision_mask, H, Hinv):
 
-        render_res = self.text_renderer.render_sample(collision_mask)
+        render_res = self.text_render.render_text(collision_mask)
         if render_res is None:  # rendering not successful
             return  #None
         else:
-            text_mask, loc, bb, text = render_res
+            text_mask, loc, bb, text, curve_flag = render_res
+            #if not curve_flag:
+            #    return
 
         # update the collision mask with text:
         collision_mask += (255 * (text_mask > 0)).astype('uint8')
 
         # warp the object mask back onto the image:
         text_mask_orig = text_mask.copy()
+        fignum = 1
+        plt.close(fignum)
+        plt.figure(fignum)
+        plt.imshow(text_mask_orig)
+        plt.show()
+        input('continue?')
+        plt.close(fignum)
         bb_orig = bb.copy()
         text_mask = self.warpHomography(text_mask, H, rgb.shape[:2][::-1])
         bb = self.homographyBB(bb, Hinv)
@@ -185,7 +189,7 @@ class Renderer(object):
 
         im_final = self.colorizer.color(rgb, [text_mask], np.array([min_h]))
 
-        return im_final, text, bb, collision_mask
+        return im_final, text, bb, collision_mask, curve_flag
 
     def get_num_text_regions(self, nregions):
         #return nregions
@@ -235,7 +239,7 @@ class Renderer(object):
 
         return wordBB
 
-    def render_text(self,
+    def render(self,
                     rgb,
                     depth,
                     seg,
@@ -269,41 +273,38 @@ class Renderer(object):
             If there's an error in pre-text placement, for e.g. if there's 
             no suitable region for text placement, an empty list is returned.
         """
-        try:
-            # depth -> xyz
-            # TODO: debug
-            np.random.seed(0)
-            depth = 100 + 0.001 * np.random.rand(*depth.shape)
-            #xyz = 100 + 0.1 * np.random.rand(*xyz.shape)
-            xyz = synth.DepthCamera.depth2xyz(depth)
+        #try:
+        # depth -> xyz
+        # TODO: debug
+        #np.random.seed(0)
+        #depth = 100 + 0.001 * np.random.rand(*depth.shape)
+        #xyz = 100 + 0.1 * np.random.rand(*xyz.shape)
+        xyz = synth.DepthCamera.depth2xyz(depth)
 
-            # find text-regions:
-            regions = TEXT_REGIONS.get_regions(xyz, seg, area, label)
+        # find text-regions:
+        regions = TEXT_REGIONS.get_regions(xyz, seg, area, label)
 
-            # find the placement mask and homographies:
-            regions = self.filter_for_placement(xyz, seg, regions)
+        # find the placement mask and homographies:
+        regions = self.filter_for_placement(xyz, seg, regions)
 
-            # finally place some text:
-            nregions = len(regions['place_mask'])
-            if nregions < 1:  # no good region to place text on
-                return []
-        except:
+        # finally place some text:
+        nregions = len(regions['place_mask'])
+        if nregions < 1:  # no good region to place text on
+            return []
+        #except:
             # failure in pre-text placement
             #import traceback
-            traceback.print_exc()
-            return []
+        #    traceback.print_exc()
+        #    return []
 
         res = []
         for i in range(ninstance):
+            print('-----Instance %d-----' % i)
             place_masks = copy.deepcopy(regions['place_mask'])
-
-            print(' ** instance # : %d' % i)
 
             idict = {'img': [], 'charBB': None, 'wordBB': None, 'txt': None}
 
-            m = self.get_num_text_regions(
-                nregions
-            )  #np.arange(nregions)#min(nregions, 5*ninstance*self.max_text_regions))
+            m = self.get_num_text_regions(nregions)  #np.arange(nregions)#min(nregions, 5*ninstance*self.max_text_regions))
             reg_idx = np.arange(min(2 * m, nregions))
             np.random.shuffle(reg_idx)
             reg_idx = reg_idx[:m]
@@ -334,19 +335,27 @@ class Renderer(object):
                 except TimeoutException as e:
                     print(e)
                     continue
-                except:
-                    traceback.print_exc()
-                    # some error in placing text on the region
-                    continue
+                #except:
+                #    traceback.print_exc()
+                #    # some error in placing text on the region
+                #    continue
 
                 if txt_render_res is not None:
                     placed = True
-                    img, text, bb, collision_mask = txt_render_res
+                    img, text, bb, collision_mask, curve_flag = txt_render_res
                     # update the region collision mask:
                     place_masks[ireg] = collision_mask
                     # store the result:
                     itext.append(text)
                     ibb.append(bb)
+
+                    print('-----<text-----')
+                    if curve_flag:
+                        print('####curve####')
+                    else:
+                        print('####not curve####')
+                    print(text)
+                    print('-----text>-----')
 
             if placed:
                 # at least 1 word was placed in this instance:
@@ -357,7 +366,7 @@ class Renderer(object):
                                                    ' '.join(itext))
                 res.append(idict.copy())
                 if viz:
-                    viz_textbb(1, img, [idict['wordBB']], alpha=1.0)
+                    #viz_textbb(1, img, [idict['wordBB']], alpha=1.0)
                     #viz_masks(2, img, seg, depth, regions['label'])
                     # viz_regions(rgb.copy(),xyz,seg,regions['coeff'],regions['label'])
                     if i < ninstance - 1:

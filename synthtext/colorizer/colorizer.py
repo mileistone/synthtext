@@ -13,11 +13,11 @@ import cv2
 from synthtext.synth.poisson_reconstruct import blit_images
 from synthtext.config import load_cfg
 
-from .font import FontColor
+from .font_color import FontColor
 from .layer import Layer
 
 
-class Colorize(object):
+class Colorizer(object):
     def __init__(self):
         # # get a list of background-images:
         # imlist = [osp.join(im_path,f) for f in os.listdir(im_path)]
@@ -141,8 +141,10 @@ class Colorize(object):
         def get_sample(x):
             ps = np.abs(vs - x / 255.0)
             ps /= np.sum(ps)
+            rand_num1 = np.random.choice(vs, p=ps)
+            rand_num2 = np.random.randn()
             v_rand = np.clip(
-                np.random.choice(vs, p=ps) + 0.1 * np.random.randn(), 0, 1)
+                rand_num1 + 0.1 * rand_num2, 0, 1)
             return 255 * v_rand
 
         # first choose a color, then inc/dec its VALUE:
@@ -202,7 +204,8 @@ class Colorize(object):
         bg_col = np.mean(np.mean(bg_arr, axis=0), axis=0)
         l_bg = Layer(alpha=255 * np.ones_like(text_arr, 'uint8'), color=bg_col)
 
-        l_text.alpha = l_text.alpha * np.clip(0.88 + 0.1 * np.random.randn(),
+        rand_num = np.random.randn()
+        l_text.alpha = l_text.alpha * np.clip(0.88 + 0.1 * rand_num,
                                               0.72, 1.0)
         layers = [l_text]
         blends = []
@@ -221,18 +224,24 @@ class Colorize(object):
         # add shadow:
         if np.random.rand() < self.p_drop_shadow:
             # shadow gaussian size:
-            if min_h <= 15: bsz = 1
-            elif 15 < min_h < 30: bsz = 3
-            else: bsz = 5
+            if min_h <= 15: 
+                bsz = 1
+            elif 15 < min_h < 30: 
+                bsz = 3
+            else: 
+                bsz = 5
 
             # shadow angle:
             theta = np.pi / 4 * np.random.choice([1, 3, 5, 7
                                                   ]) + 0.5 * np.random.randn()
 
             # shadow shift:
-            if min_h <= 15: shift = 2
-            elif 15 < min_h < 30: shift = 7 + np.random.randn()
-            else: shift = 15 + 3 * np.random.randn()
+            if min_h <= 15: 
+                shift = 2
+            elif 15 < min_h < 30: 
+                shift = 7 + np.random.randn()
+            else: 
+                shift = 15 + 3 * np.random.randn()
 
             # opacity:
             op = 0.50 + 0.1 * np.random.randn()
