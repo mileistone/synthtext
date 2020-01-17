@@ -1,7 +1,7 @@
 
 - Renderer(renderer)
     - Colorizer(colorizer)
-    - TextRender(text_render)
-        - BaselineState
+    - TextRenderer(text_renderer)
+        - Curvature
         - Corpora
-        - FontState
+        - TextState
