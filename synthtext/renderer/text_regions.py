@@ -111,15 +111,16 @@ class TextRegions(object):
         }
         for idx, l in enumerate(regions['label']):
             mask = seg == l
-            pt_sample = self.sample_grid_neighbours(
-                mask, self.ransac_fit_trials, step=3)
+            pt_sample = self.sample_grid_neighbours(mask,
+                                                    self.ransac_fit_trials,
+                                                    step=3)
             if pt_sample is None:
                 continue  #not enough points for RANSAC
             # get-depths
             pt = xyz[mask]
             plane_model = synth.isplanar(pt, pt_sample, self.dist_thresh,
-                                      self.num_inlier,
-                                      self.min_z_projection)
+                                         self.num_inlier,
+                                         self.min_z_projection)
             if plane_model is not None:
                 plane_coeff = plane_model[0]
                 if np.abs(plane_coeff[2]) > self.min_z_projection:
@@ -143,6 +144,7 @@ class TextRegions(object):
         """
         wx = np.median(np.sum(mask, axis=0))
         wy = np.median(np.sum(mask, axis=1))
-        return wx > self.min_rectified_w and wy >self. min_rectified_w
+        return wx > self.min_rectified_w and wy > self.min_rectified_w
+
 
 TEXT_REGIONS = TextRegions()

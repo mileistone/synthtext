@@ -26,7 +26,6 @@ class Colorizer(object):
         self.font_color = FontColor(
             col_file=osp.join(self.data_dir, 'models/colors_new.cp'))
 
-
     def drop_shadow(self, alpha, theta, shift, size, op=0.80):
         """
         alpha : alpha layer whose shadow need to be cast
@@ -143,8 +142,7 @@ class Colorizer(object):
             ps /= np.sum(ps)
             rand_num1 = np.random.choice(vs, p=ps)
             rand_num2 = np.random.randn()
-            v_rand = np.clip(
-                rand_num1 + 0.1 * rand_num2, 0, 1)
+            v_rand = np.clip(rand_num1 + 0.1 * rand_num2, 0, 1)
             return 255 * v_rand
 
         # first choose a color, then inc/dec its VALUE:
@@ -188,10 +186,10 @@ class Colorizer(object):
             H : minimum height of a character
         """
         bg_col, fg_col, i = 0, 0, 0
-        fg_col, bg_col = self.font_color.sample_from_data(bg_arr)
+        fg_col, bg_col = self.font_color.sample_color(bg_arr)
         return Layer(alpha=text_arr, color=fg_col), fg_col, bg_col
 
-    def process(self, text_arr, bg_arr, min_h):
+    def paste(self, text_arr, bg_arr, min_h):
         """
         text_arr : one alpha mask : nxm, uint8
         bg_arr   : background image: nxmx3, uint8
@@ -205,8 +203,7 @@ class Colorizer(object):
         l_bg = Layer(alpha=255 * np.ones_like(text_arr, 'uint8'), color=bg_col)
 
         rand_num = np.random.randn()
-        l_text.alpha = l_text.alpha * np.clip(0.88 + 0.1 * rand_num,
-                                              0.72, 1.0)
+        l_text.alpha = l_text.alpha * np.clip(0.88 + 0.1 * rand_num, 0.72, 1.0)
         layers = [l_text]
         blends = []
 
@@ -224,11 +221,11 @@ class Colorizer(object):
         # add shadow:
         if np.random.rand() < self.p_drop_shadow:
             # shadow gaussian size:
-            if min_h <= 15: 
+            if min_h <= 15:
                 bsz = 1
-            elif 15 < min_h < 30: 
+            elif 15 < min_h < 30:
                 bsz = 3
-            else: 
+            else:
                 bsz = 5
 
             # shadow angle:
@@ -236,11 +233,11 @@ class Colorizer(object):
                                                   ]) + 0.5 * np.random.randn()
 
             # shadow shift:
-            if min_h <= 15: 
+            if min_h <= 15:
                 shift = 2
-            elif 15 < min_h < 30: 
+            elif 15 < min_h < 30:
                 shift = 7 + np.random.randn()
-            else: 
+            else:
                 shift = 15 + 3 * np.random.randn()
 
             # opacity:
@@ -276,7 +273,8 @@ class Colorizer(object):
 
         return l_out
 
-    def color(self, bg_arr, text_arr, hs, place_order=None, pad=20):
+    # main method
+    def colorize(self, bg_arr, text_arr, hs, place_order=None, pad=20):
         """
         Return colorized text image.
 
@@ -323,7 +321,7 @@ class Colorizer(object):
             w, h = text_patch.shape
             bg = bg_arr[l[0]:l[0] + w, l[1]:l[1] + h, :]
 
-            rdr0 = self.process(text_patch, bg, hs[i])
+            rdr0 = self.paste(text_patch, bg, hs[i])
             rendered.append(rdr0)
 
             bg_arr[l[0]:l[0] + w, l[1]:l[1] + h, :] = rdr0  #rendered[-1]

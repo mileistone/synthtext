@@ -22,4 +22,5 @@ class Layer(object):
         elif color.ndim == 3:  #rgb image
             self.color = color.copy().astype('uint8')
         else:
-            raise Exception('Data type not understood: color shape %s' % color.shape)
+            raise Exception('Data type not understood: color shape %s' %
+                            color.shape)

@@ -13,6 +13,7 @@ sys.path.insert(0, './')
 
 from synthtext.renderer import Renderer
 from synthtext.common import set_random_seed
+from synthtext.renderer.utils import get_bounding_rect, get_crops, filter_valid
 
 
 def get_data(db_fp):
@@ -42,14 +43,35 @@ def render(engine, img, depth, seg, area, label, ninstance, viz=False):
     img = np.array(img.resize(sz, Image.ANTIALIAS))
     seg = np.array(Image.fromarray(seg).resize(sz, Image.NEAREST))
 
-    res = engine.render(img,
-                          depth,
-                          seg,
-                          area,
-                          label,
-                          ninstance,
-                          viz)
+    res = engine.render(img, depth, seg, area, label, ninstance, viz)
     return res
+
+
+def get_all_crops(idict):
+    img = idict['img']
+    min_area_rect = idict['wordBB']
+    words = [] 
+    for line in idict['txt']:
+        segs = line.split() 
+        words.extend(segs)
+    four_points, extreme_points = get_bounding_rect(min_area_rect)
+    crops, valid_flags = get_crops(img, extreme_points)
+    valid_crops = filter_valid(crops, valid_flags)
+    valid_words = filter_valid(words, valid_flags)
+    return valid_crops, valid_words
+
+
+def save_crops(imgname, res, save_folder):
+    ninstance = len(res)
+    for ii in range(ninstance):
+        crops, words = get_all_crops(res[ii])
+        ncrops = len(crops)
+        for jj in range(ncrops):
+            fp = '%s/%s_ins%d_crop%d_%s.png' % (save_folder, \
+                    imgname.replace('.jpg', ''), ii, jj, words[jj])
+            im = Image.fromarray(crops[jj])
+            im.save(fp)
+
 
 
 def add_res_to_db(imgname, res, db):
@@ -68,13 +90,14 @@ def add_res_to_db(imgname, res, db):
 
 def main():
     ## Define some configuration variables:
-    viz = True
+    viz = False
     nimg = -1  # no. of images to use for generation (-1 to use all available):
     ninstance = 3  # no. of times to use the same image
     secs_per_img = 5  #max time per image in seconds
 
     # path to the data-file, containing image, depth and segmentation:
     resource_dir = 'data'
+    save_folder = 'output'
     in_fp = osp.join(resource_dir, 'dset.h5')
     # url of the data (google-drive public file):
     out_fp = 'results/SynthText.h5'
@@ -86,9 +109,9 @@ def main():
     print('\t-> Done')
 
     # open the output h5 file:
-    out_db = h5py.File(out_fp, 'w')
-    out_db.create_group('/data')
-    print('Storing the output in: ' + out_fp)
+    #out_db = h5py.File(out_fp, 'w')
+    #out_db.create_group('/data')
+    #print('Storing the output in: ' + out_fp)
 
     # get the names of the image files in the dataset:
     imnames = sorted(in_db['image'].keys())
@@ -109,15 +132,16 @@ def main():
         seg = in_db['seg'][imname][:].astype('float32')
         area = in_db['seg'][imname].attrs['area']
         label = in_db['seg'][imname].attrs['label']
-        
+
         print('%d of %d' % (i, nimg - 1))
         res = render(engine, img, depth, seg, area, label, ninstance, viz)
 
         if len(res) > 0:
+            save_crops(imname, res, save_folder)
             # non-empty : successful in placing text:
-            add_res_to_db(imname, res, out_db)
+            #add_res_to_db(imname, res, out_db)
     in_db.close()
-    out_db.close()
+    #out_db.close()
 
 
 if __name__ == '__main__':

@@ -130,3 +130,78 @@ def get_text_placement_mask(xyz, mask, plane, pad=2, viz=False):
     return place_mask, H, Hinv
 
 
+def get_bounding_rect(min_area_rect):
+    """Get bounding rect of a rotated rect.
+     
+        Args:
+            min_area_rect, np.ndarray, 2x4xN, N is the total of rect
+        Return:
+            four_points, np.ndarray, 2x4xN, [top_left, top_right, bottom_right, bottom_left]
+            extreme_points, [xmin, ymin, xmax, ymax]
+    """
+    xmin = min_area_rect[0].min(axis=0)
+    xmax = min_area_rect[0].max(axis=0)
+    ymin = min_area_rect[1].min(axis=0)
+    ymax = min_area_rect[1].max(axis=0)
+
+    xx = np.concatenate([xmin[None, :], xmax[None, :], xmax[None, :], xmin[None, :]], axis=0) 
+    yy = np.concatenate([ymin[None, :], ymin[None, :], ymax[None, :], ymax[None, :]], axis=0) 
+    four_points = np.concatenate([xx[None, :, :], yy[None, :, :]], axis=0)
+    extreme_points = [xmin, ymin, xmax, ymax]
+    return four_points, extreme_points 
+
+
+def get_crops(img, rects):
+    """Get crops from image based on rects.
+
+    Args:
+        img, np.ndarray
+        rects, [xmins, ymins, xmaxs, ymaxs], each entry has a length of N (total of rect), (xmin, ymin) is the top left point of a rect, (xmax, ymax) is the bottom right point of a rect
+            xmins, np.ndarray
+    Return:
+        crops, list of crop, which is a np.ndarray
+    """
+    xmins, ymins, xmaxs, ymaxs = rects
+    assert len(xmins) == len(ymins) == len(xmaxs) == len(ymaxs)
+    crops_total = len(xmins)
+    crops = []
+    valid_flags = []
+    for idx in range(crops_total):
+        xmin = xmins[idx]
+        ymin = ymins[idx]
+        xmax = xmaxs[idx]
+        ymax = ymaxs[idx]
+        crop = get_crop(img, xmin, ymin, xmax, ymax)
+        crops.append(crop)
+        is_valid =  crop is not None
+        valid_flags.append(is_valid)
+    return crops, valid_flags
+
+
+def get_crop(img, xmin, ymin, xmax, ymax):
+    """Get crop from img based on a rect.
+
+        Args:
+            xmins, np.ndarray
+            (xmin, ymin) is the top left point of a rect, (xmax, ymax) is the bottom right point of a rect
+    """
+    rows, cols = img.shape[:2]
+    # height, width, channel
+    x_start = int(xmin)
+    x_end = int(xmax + 1)
+    y_start = int(ymin)
+    y_end = int(ymax + 1)
+    if x_start >= 0 and y_start >= 0 and \
+            x_end <= cols and y_end <= rows:
+        crop = img[y_start : y_end, x_start : x_end]
+        return crop
+    else:
+        return None
+
+
+def filter_valid(raw_list, valid_flags):
+    valid_list = []
+    for idx, is_valid in enumerate(valid_flags):
+        if is_valid:
+            valid_list.append(raw_list[idx])
+    return valid_list

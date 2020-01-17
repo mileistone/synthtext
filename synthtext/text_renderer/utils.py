@@ -42,5 +42,3 @@ def crop_safe(arr, rect, bbs=[], pad=0):
         return arr, bbs
     else:
         return arr
-
-

@@ -1,8 +1,8 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 import synthtext.synth as synth
-
 
 
 def viz_masks(fignum, rgb, seg, depth, label):
@@ -82,3 +82,17 @@ def viz_textbb(fignum, text_im, bb_list, alpha=1.0):
     plt.show(block=False)
 
 
+def viz_images(fignum, imgs, texts):
+    plt.close(fignum)
+    plt.figure(fignum)
+    imgs_total = len(imgs)
+    cols = math.ceil(math.sqrt(imgs_total))
+    rows = cols
+    
+    for idx in range(imgs_total):
+        row_idx = idx // cols
+        col_idx = idx % cols
+        plt.subplot(rows, cols, idx + 1)
+        plt.imshow(imgs[idx])
+        plt.xlabel(texts[idx])
+    plt.show(block=False)

@@ -17,7 +17,7 @@ class FontColor(object):
         # convert color-means from RGB to LAB for better nearest neighbour
         # computations:
         self.lab_colors = np.r_[self.rgb_colors[:, 0:3],
-                               self.rgb_colors[:, 6:9]].astype('uint8')
+                                self.rgb_colors[:, 6:9]].astype('uint8')
         self.lab_colors = np.squeeze(
             cv2.cvtColor(self.lab_colors[None, :, :], cv2.COLOR_RGB2Lab))
 
@@ -27,10 +27,10 @@ class FontColor(object):
         with standard deviation = COL_STD.
         """
         rand_num = np.random.randn()
-        col_sample = col_mean + col_std * rand_num 
+        col_sample = col_mean + col_std * rand_num
         return np.clip(col_sample, 0, 255).astype('uint8')
 
-    def sample_from_data(self, bg_mat):
+    def sample_color(self, bg_mat):
         """
         bg_mat : this is a nxmx3 RGB image.
         
@@ -79,10 +79,10 @@ class FontColor(object):
         col1 = np.squeeze(cv2.cvtColor(col1[None, None, :], cv2.COLOR_RGB2HSV))
         col2 = np.squeeze(cv2.cvtColor(col2[None, None, :], cv2.COLOR_RGB2HSV))
         h1, h2 = col1[0], col2[0]
-        if h2 < h1: 
+        if h2 < h1:
             h1, h2 = h2, h1  #swap
         dh = h2 - h1
-        if dh < 127: 
+        if dh < 127:
             dh = 255 - dh
         col1[0] = h1 + dh / 2
         return np.squeeze(cv2.cvtColor(col1[None, None, :], cv2.COLOR_HSV2RGB))

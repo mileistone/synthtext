@@ -1,5 +1,6 @@
 from . import _config as CFG
 
+
 def load_cfg(obj):
     global CFG
     dd = getattr(CFG, obj.__class__.__name__)

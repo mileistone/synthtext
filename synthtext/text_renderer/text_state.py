@@ -61,12 +61,14 @@ class TextState(object):
         #idx = int(np.random.randint(0, len(self.capsmode)))
         #font_state['capsmode'] = self.capsmode[idx]
 
-        std = np.random.randn() 
-        font_state['size'] = self.size[1] * std  + self.size[0]
+        std = np.random.randn()
+        font_state['size'] = self.size[1] * std + self.size[0]
 
         std = np.random.randn()
-        font_state['underline_adjustment'] = max(2.0, min(-2.0, 
-                self.underline_adjustment[1] * std +
+        font_state['underline_adjustment'] = max(
+            2.0,
+            min(
+                -2.0, self.underline_adjustment[1] * std +
                 self.underline_adjustment[0]))
 
         std = np.random.rand()
@@ -74,7 +76,8 @@ class TextState(object):
                 self.strength[0]
 
         std = np.random.beta(self.kerning[0], self.kerning[1])
-        font_state['char_spacing'] = int(self.kerning[3] * std + self.kerning[2])
+        font_state['char_spacing'] = int(self.kerning[3] * std +
+                                         self.kerning[2])
 
         flag = np.random.rand() < self.underline
         font_state['underline'] = flag
@@ -128,26 +131,3 @@ class TextState(object):
         """
         m = self.font_model[font.name]
         return m[0] * font_size_px + m[1]  #linear model
-
-
-class BaselineState(object):
-
-    curve = lambda this, a: lambda x: a * x * x
-    differential = lambda this, a: lambda x: 2 * a * x
-
-    def __init__(self):
-        load_cfg(self)
-
-    def get_sample(self):
-        """
-        Returns the functions for the curve and differential for a and b
-        """
-        sgn = 1.0
-        if np.random.rand() < self.p_sgn:
-            sgn = -1
-
-        a = self.a[1] * np.random.randn() + sgn * self.a[0]
-        return {
-            'curve': self.curve(a),
-            'diff': self.differential(a),
-        }

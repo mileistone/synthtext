@@ -14,7 +14,9 @@ class Corpora(object):
         TXT_FP : path to file containing text data.
         """
         load_cfg(self)
-        fp = osp.join(self.data_dir, 'newsgroup/newsgroup.txt')
+        #fp = osp.join(self.data_dir, 'newsgroup/newsgroup.txt')
+        #fp = osp.join(self.data_dir, 'newsgroup/alpha_words.txt')
+        fp = osp.join(self.data_dir, 'newsgroup/alpha_words_shuffle.txt')
         self.fdict = {
             'WORD': self.sample_word,
             'LINE': self.sample_line,
@@ -102,8 +104,10 @@ class Corpora(object):
         else:
             return lines
 
+    # main method
     def sample_text(self, nline_max, nchar_max, kind='WORD'):
-        return self.fdict[kind](nline_max, nchar_max)
+        text = self.fdict[kind](nline_max, nchar_max)
+        return text
 
     def sample_word(self, nline_max, nchar_max, niter=100):
         rand_line = self.txt[np.random.choice(len(self.txt))]
@@ -112,7 +116,7 @@ class Corpora(object):
 
         iter_ = 0
         while iter_ < niter and (not self.is_good([rand_word])[0]
-                                or len(rand_word) > nchar_max):
+                                 or len(rand_word) > nchar_max):
             rand_line = self.txt[np.random.choice(len(self.txt))]
             words = rand_line.split()
             rand_word = np.random.choice(words)

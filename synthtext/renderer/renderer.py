@@ -19,7 +19,8 @@ from synthtext.config import load_cfg
 
 from .text_regions import TEXT_REGIONS
 from .utils import rescale_frontoparallel, get_text_placement_mask
-from .viz import viz_textbb
+from .utils import get_bounding_rect, get_crops, filter_valid
+from .viz import viz_textbb, viz_images
 
 
 class Renderer(object):
@@ -166,16 +167,37 @@ class Renderer(object):
 
         # warp the object mask back onto the image:
         text_mask_orig = text_mask.copy()
-        fignum = 1
-        plt.close(fignum)
-        plt.figure(fignum)
-        plt.imshow(text_mask_orig)
-        plt.show()
-        input('continue?')
-        plt.close(fignum)
+
+        ######### start #########
+        #viz_textbb(1, text_mask_orig, [wordBB], alpha=1.0)
+        #fignum = 1
+        #plt.figure(fignum)
+        #plt.imshow(text_mask_orig)
+        #plt.show(block=False)
+        #import pdb
+        #pdb.set_trace()
+        #input('continue?')
+        #plt.close(fignum)
+        ######### end #########
+
         bb_orig = bb.copy()
         text_mask = self.warpHomography(text_mask, H, rgb.shape[:2][::-1])
         bb = self.homographyBB(bb, Hinv)
+
+        ### start
+        #wordBB = self.char2wordBB(bb.copy(), text)
+        #viz_textbb(1, text_mask, [wordBB], alpha=1.0)
+
+        #fy = rgb.shape[0] / text_mask.shape[0] # height
+        #fx = rgb.shape[1] / text_mask.shape[1] # width
+        #text_mask = cv2.resize(text_mask, rgb.shape[:2][::-1])
+        #bb = np.array([[fx], [fy]])[:, :, None] * bb
+
+        #wordBB = self.char2wordBB(bb.copy(), text)
+        #viz_textbb(2, text_mask, [wordBB], alpha=1.0)
+        #import pdb
+        #pdb.set_trace()
+        ### end
 
         if not self.bb_filter(bb_orig, bb, text):
             #warn('bad charBB statistics')
@@ -187,7 +209,7 @@ class Renderer(object):
         #feathering:
         text_mask = self.feather(text_mask, min_h)
 
-        im_final = self.colorizer.color(rgb, [text_mask], np.array([min_h]))
+        im_final = self.colorizer.colorize(rgb, [text_mask], np.array([min_h]))
 
         return im_final, text, bb, collision_mask, curve_flag
 
@@ -239,14 +261,8 @@ class Renderer(object):
 
         return wordBB
 
-    def render(self,
-                    rgb,
-                    depth,
-                    seg,
-                    area,
-                    label,
-                    ninstance=1,
-                    viz=False):
+    # main
+    def render(self, rgb, depth, seg, area, label, ninstance=1, viz=False):
         """
         rgb   : HxWx3 image rgb values (uint8)
         depth : HxW depth values (float)
@@ -277,9 +293,11 @@ class Renderer(object):
         # depth -> xyz
         # TODO: debug
         #np.random.seed(0)
-        #depth = 100 + 0.001 * np.random.rand(*depth.shape)
-        #xyz = 100 + 0.1 * np.random.rand(*xyz.shape)
+        #depth = 100 + 0.00 * np.random.rand(*depth.shape)
         xyz = synth.DepthCamera.depth2xyz(depth)
+        #import pdb
+        #pdb.set_trace()
+        #xyz = 100 + 0.0 * np.random.rand(*xyz.shape)
 
         # find text-regions:
         regions = TEXT_REGIONS.get_regions(xyz, seg, area, label)
@@ -292,8 +310,8 @@ class Renderer(object):
         if nregions < 1:  # no good region to place text on
             return []
         #except:
-            # failure in pre-text placement
-            #import traceback
+        # failure in pre-text placement
+        #import traceback
         #    traceback.print_exc()
         #    return []
 
@@ -304,20 +322,21 @@ class Renderer(object):
 
             idict = {'img': [], 'charBB': None, 'wordBB': None, 'txt': None}
 
-            m = self.get_num_text_regions(nregions)  #np.arange(nregions)#min(nregions, 5*ninstance*self.max_text_regions))
+            m = self.get_num_text_regions(
+                nregions
+            )  #np.arange(nregions)#min(nregions, 5*ninstance*self.max_text_regions))
             reg_idx = np.arange(min(2 * m, nregions))
             np.random.shuffle(reg_idx)
             reg_idx = reg_idx[:m]
 
-            placed = False
             img = rgb.copy()
             itext = []
             ibb = []
 
             # process regions:
-            num_txt_regions = len(reg_idx)
-            NUM_REP = 5  # re-use each region three times:
-            reg_range = np.arange(NUM_REP * num_txt_regions) % num_txt_regions
+            num_txt_regions = len(reg_idx) 
+            reg_range = np.arange(self.num_repeat * num_txt_regions) % num_txt_regions
+            placed = False
             for idx in reg_range:
                 ireg = reg_idx[idx]
                 try:
@@ -357,16 +376,29 @@ class Renderer(object):
                     print(text)
                     print('-----text>-----')
 
+                    # at least 1 word was placed in this instance:
+                    idict['img'] = img
+                    idict['txt'] = itext
+                    idict['charBB'] = np.concatenate(ibb, axis=2)
+                    idict['wordBB'] = self.char2wordBB(idict['charBB'].copy(),
+                                                       ' '.join(itext))
+                    res.append(idict.copy())
             if placed:
-                # at least 1 word was placed in this instance:
-                idict['img'] = img
-                idict['txt'] = itext
-                idict['charBB'] = np.concatenate(ibb, axis=2)
-                idict['wordBB'] = self.char2wordBB(idict['charBB'].copy(),
-                                                   ' '.join(itext))
-                res.append(idict.copy())
                 if viz:
+
+                    #min_area_rect = idict['wordBB']
+                    #texts = [] 
+                    #for line in idict['txt']:
+                    #    segs = line.split() 
+                    #    texts.extend(segs)
+                    #four_points, extreme_points = get_bounding_rect(min_area_rect)
+                    #crops, valid_flags = get_crops(img, extreme_points)
+                    #print(len(crops), len(texts))
+                    #valid_crops = filter_valid(crops, valid_flags)
+                    #valid_texts = filter_valid(texts, valid_flags)
+                    #viz_images(1, valid_crops, valid_texts)
                     #viz_textbb(1, img, [idict['wordBB']], alpha=1.0)
+                    #viz_textbb(1, img, [bbox], alpha=1.0)
                     #viz_masks(2, img, seg, depth, regions['label'])
                     # viz_regions(rgb.copy(),xyz,seg,regions['coeff'],regions['label'])
                     if i < ninstance - 1:

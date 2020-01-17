@@ -1,9 +1,7 @@
 import numpy as np
 
-
 data_dir = 'data'
 min_nchar = 2
-
 
 ## renderer
 # renderer
@@ -13,24 +11,25 @@ Renderer = dict(
     min_asp_ratio=0.4,  #
     max_text_regions=7,
     max_time=5,
+    # re-use each region five times
+    num_repeat=5,
 )
 
 # text_regions
 TextRegions = dict(
-    min_width=30, #px
-    min_height=30,   #px
-    min_aspect=0.3,   # w > 0.3*h
-    max_aspect=7, 
-    min_area=100,   # number of pix
-    p_area=0.60,   # area_obj/area_minrect >= 0.6
+    min_width=30,  #px
+    min_height=30,  #px
+    min_aspect=0.3,  # w > 0.3*h
+    max_aspect=7,
+    min_area=100,  # number of pix
+    p_area=0.60,  # area_obj/area_minrect >= 0.6
     # RANSAC planar fitting params:
-    dist_thresh=0.10,   # m
-    num_inlier=90, 
-    ransac_fit_trials=100, 
-    min_z_projection=0.25, 
+    dist_thresh=0.10,  # m
+    num_inlier=90,
+    ransac_fit_trials=100,
+    min_z_projection=0.25,
     min_rectified_w=20,
 )
-
 
 ## text_renderer
 # text_renderer
@@ -48,9 +47,9 @@ TextRenderer = dict(
     max_shrink_trials=5,
     # px : 0.6*12 ~ 7px <= actual minimum height
     # 16
-    min_font_h=16, #25,
+    min_font_h=16,  #25,
     # 120
-    max_font_h=120, #60,
+    max_font_h=120,  #60,
     p_flat=0.10,
     # curved baseline:
     p_curved=1.0,  # 1.0
@@ -80,8 +79,8 @@ TextState = dict(
 )
 
 # text_state
-BaselineState = dict(
-    a=[0.5, 0.05], #a=[0.5, 0.05],
+Curvature = dict(
+    a=[0.5, 0.05],  #a=[0.5, 0.05],
     p_sgn=0.5,
 )
 
@@ -103,7 +102,6 @@ Corpora = dict(
     center_para=0.5,
 )
 
-
 ## colorizer
 # probabilities of different text-effects:
 Colorizer = dict(
@@ -112,8 +110,8 @@ Colorizer = dict(
     #p_bevel=0, #0.05,
     # just keep the outline of the text
     #p_outline=0, #0.05,
-    p_drop_shadow=0, #0.15,
-    p_border=0, #0.15,
+    p_drop_shadow=0,  #0.15,
+    p_border=0,  #0.15,
     # add background-based bump-mapping
     #p_displacement=0, #0.30,
     # use an image for coloring text

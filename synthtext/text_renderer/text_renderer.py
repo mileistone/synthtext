@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.io as sio
 import os
 import os.path as osp
@@ -14,7 +13,8 @@ import cv2
 
 from synthtext.config import load_cfg
 
-from .text_state import TextState, BaselineState
+from .text_state import TextState
+from .curvature import Curvature
 from .corpora import Corpora
 from .utils import sample_weighted, move_bb, crop_safe
 from .viz import visualize_bb
@@ -30,7 +30,7 @@ class TextRenderer(object):
         # distribution over the type of text:
         load_cfg(self)
 
-        self.baselinestate = BaselineState()
+        self.curvature = Curvature()
 
         # text-source : gets english text:
         self.corpora = Corpora()
@@ -96,7 +96,7 @@ class TextRenderer(object):
         surf_arr = surf_arr.swapaxes(0, 1)
         #self.visualize_bb(surf_arr,bbs)
         return surf_arr, words, bbs, False
-    
+
     def render_curved(self, font, word_text):
         """
         use curved baseline for rendering word
@@ -105,7 +105,7 @@ class TextRenderer(object):
         isword = len(word_text.split()) == 1
 
         # do curved iff, the length of the word <= 10
-        rand_num = np.random.rand() 
+        rand_num = np.random.rand()
         if not isword or wl > 10 or rand_num > self.p_curved:
             #print('no curve')
             return self.render_multiline(font, word_text)
@@ -119,7 +119,7 @@ class TextRenderer(object):
 
         # baseline state
         mid_idx = wl // 2
-        BS = self.baselinestate.get_sample()
+        BS = self.curvature.sample_curvature()
         curve = [BS['curve'](i - mid_idx) for i in range(wl)]
         curve[mid_idx] = -np.sum(curve) / (wl - 1)
         rots = [
@@ -272,7 +272,8 @@ class TextRenderer(object):
             coords[:, 2, i] += bbs[i, 2:4]
             coords[1, 3, i] += bbs[i, 3]
         return coords
-    
+
+    # main method
     def render_text(self, mask):
         """
         Places text in the "collision-free" region as indicated
@@ -338,6 +339,3 @@ class TextRenderer(object):
             if len(loc) > 0:  #successful in placing the text collision-free:
                 return text_mask, loc[0], bb[0], text, curve_flag
         return  #None
-
-
-
