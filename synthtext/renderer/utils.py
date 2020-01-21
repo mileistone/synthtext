@@ -144,11 +144,13 @@ def get_bounding_rect(min_area_rect):
     ymin = min_area_rect[1].min(axis=0)
     ymax = min_area_rect[1].max(axis=0)
 
-    xx = np.concatenate([xmin[None, :], xmax[None, :], xmax[None, :], xmin[None, :]], axis=0) 
-    yy = np.concatenate([ymin[None, :], ymin[None, :], ymax[None, :], ymax[None, :]], axis=0) 
+    xx = np.concatenate(
+        [xmin[None, :], xmax[None, :], xmax[None, :], xmin[None, :]], axis=0)
+    yy = np.concatenate(
+        [ymin[None, :], ymin[None, :], ymax[None, :], ymax[None, :]], axis=0)
     four_points = np.concatenate([xx[None, :, :], yy[None, :, :]], axis=0)
     extreme_points = [xmin, ymin, xmax, ymax]
-    return four_points, extreme_points 
+    return four_points, extreme_points
 
 
 def get_crops(img, rects):
@@ -173,7 +175,7 @@ def get_crops(img, rects):
         ymax = ymaxs[idx]
         crop = get_crop(img, xmin, ymin, xmax, ymax)
         crops.append(crop)
-        is_valid =  crop is not None
+        is_valid = crop is not None
         valid_flags.append(is_valid)
     return crops, valid_flags
 
@@ -193,7 +195,7 @@ def get_crop(img, xmin, ymin, xmax, ymax):
     y_end = int(ymax + 1)
     if x_start >= 0 and y_start >= 0 and \
             x_end <= cols and y_end <= rows:
-        crop = img[y_start : y_end, x_start : x_end]
+        crop = img[y_start:y_end, x_start:x_end]
         return crop
     else:
         return None

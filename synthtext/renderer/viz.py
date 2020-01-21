@@ -88,7 +88,7 @@ def viz_images(fignum, imgs, texts):
     imgs_total = len(imgs)
     cols = math.ceil(math.sqrt(imgs_total))
     rows = cols
-    
+
     for idx in range(imgs_total):
         row_idx = idx // cols
         col_idx = idx % cols

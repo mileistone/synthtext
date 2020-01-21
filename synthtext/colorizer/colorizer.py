@@ -23,8 +23,7 @@ class Colorizer(object):
         # imlist = [osp.join(im_path,f) for f in os.listdir(im_path)]
         # self.bg_list = [p for p in imlist if osp.isfile(p)]
         load_cfg(self)
-        self.font_color = FontColor(
-            col_file=osp.join(self.data_dir, 'models/colors_new.cp'))
+        self.font_color = FontColor(self.font_fp)
 
     def drop_shadow(self, alpha, theta, shift, size, op=0.80):
         """

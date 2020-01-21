@@ -15,23 +15,20 @@ class TextState(object):
     def __init__(self):
         load_cfg(self)
 
-        char_freq_path = osp.join(self.data_dir, 'models/char_freq.cp')
-        font_model_path = osp.join(self.data_dir, 'models/font_px2pt.cp')
-
         # get character-frequencies in the English language:
-        with open(char_freq_path, 'rb') as f:
-            self.char_freq = pickle.load(f)
+        with open(self.char_freq_fp, 'rb') as fd:
+            self.char_freq = pickle.load(fd)
 
         # get the model to convert from pixel to font pt size:
-        with open(font_model_path, 'rb') as f:
-            self.font_model = pickle.load(f)
+        with open(self.font_model_fp, 'rb') as fd:
+            self.font_model = pickle.load(fd)
 
-        # get the names of fonts to use:
-        self.font_list = osp.join(self.data_dir, 'fonts/fontlist.txt')
-        self.fonts = [
-            os.path.join(self.data_dir, 'fonts', f.strip())
-            for f in open(self.font_list)
-        ]
+        self.fonts = []
+        with open(self.font_list_fp, 'r') as fd:
+            # get the names of fonts to use:
+            for line in fd:
+                font_fp = osp.join(self.data_dir, line.strip())
+                self.fonts.append(font_fp)
 
     def init_font(self, fs):
         """

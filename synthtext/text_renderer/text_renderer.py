@@ -16,7 +16,7 @@ from synthtext.config import load_cfg
 from .text_state import TextState
 from .curvature import Curvature
 from .corpora import Corpora
-from .utils import sample_weighted, move_bb, crop_safe
+from .utils import move_bb, crop_safe
 from .viz import visualize_bb
 
 
@@ -311,15 +311,12 @@ class TextRenderer(object):
             font.size = f_h  # set the font-size
 
             # compute the max-number of lines/chars-per-line:
-            nline, nchar = self.get_nline_nchar(mask.shape[:2], f_h,
-                                                f_h * f_asp)
+            nline, nchar = self.get_nline_nchar(mask.shape[:2], f_h, f_h * f_asp)
             #print "  > nline = %d, nchar = %d"%(nline, nchar)
 
             assert nline >= 1 and nchar >= self.min_nchar
 
-            # sample text:
-            text_type = sample_weighted(self.p_text)
-            text = self.corpora.sample_text(nline, nchar, text_type)
+            text = self.corpora.sample_text(nline, nchar)
             #print(text)
             if len(text) == 0 or np.any([len(line) == 0 for line in text]):
                 continue

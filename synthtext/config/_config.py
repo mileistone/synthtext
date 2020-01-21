@@ -1,4 +1,5 @@
 import numpy as np
+import os.path as osp
 
 data_dir = 'data'
 min_nchar = 2
@@ -6,7 +7,6 @@ min_nchar = 2
 ## renderer
 # renderer
 Renderer = dict(
-    data_dir=data_dir,
     min_char_height=8,  #px
     min_asp_ratio=0.4,  #
     max_text_regions=7,
@@ -34,14 +34,7 @@ TextRegions = dict(
 ## text_renderer
 # text_renderer
 TextRenderer = dict(
-    data_dir=data_dir,
     min_nchar=min_nchar,
-    # whether to get a single word, paragraph or a line:
-    p_text={
-        0.0: 'WORD',
-        0.0: 'LINE',
-        1.0: 'PARA'
-    },
     ## TEXT PLACEMENT PARAMETERS:
     #f_shrink=0.90,
     max_shrink_trials=5,
@@ -58,6 +51,9 @@ TextRenderer = dict(
 # text_state
 TextState = dict(
     data_dir=data_dir,
+    char_freq_fp=osp.join(data_dir, 'models/char_freq.pkl'),
+    font_model_fp=osp.join(data_dir, 'models/font_px2pt.pkl'),
+    font_list_fp=osp.join(data_dir, 'fonts/fontlist.txt'),
     # normal dist mean, std
     size=[50, 10],
     underline=0.05,
@@ -86,7 +82,13 @@ Curvature = dict(
 
 # corpora
 Corpora = dict(
-    data_dir=data_dir,
+    corpora_fp=osp.join(data_dir, 'newsgroup/alpha_words.txt'),
+    # whether to get a single word, paragraph or a line:
+    p_text={
+        0.0: 'WORD',
+        #0.0: 'LINE',
+        #1.0: 'PARA'
+    },
     # the minimum number of characters that should fit in a mask
     # to define the maximum font height.
     min_nchar=min_nchar,
@@ -105,13 +107,13 @@ Corpora = dict(
 ## colorizer
 # probabilities of different text-effects:
 Colorizer = dict(
-    data_dir=data_dir,
+    font_fp=osp.join(data_dir, 'models/colors_new.pkl'),
     # add bevel effect to text
     #p_bevel=0, #0.05,
     # just keep the outline of the text
     #p_outline=0, #0.05,
-    p_drop_shadow=0,  #0.15,
-    p_border=0,  #0.15,
+    p_drop_shadow=0.15,
+    p_border=0.15,
     # add background-based bump-mapping
     #p_displacement=0, #0.30,
     # use an image for coloring text

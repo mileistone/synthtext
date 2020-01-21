@@ -4,6 +4,8 @@ import os.path as osp
 
 from synthtext.config import load_cfg
 
+from .utils import sample_weighted
+
 
 class Corpora(object):
     """
@@ -16,14 +18,13 @@ class Corpora(object):
         load_cfg(self)
         #fp = osp.join(self.data_dir, 'newsgroup/newsgroup.txt')
         #fp = osp.join(self.data_dir, 'newsgroup/alpha_words.txt')
-        fp = osp.join(self.data_dir, 'newsgroup/alpha_words_shuffle.txt')
         self.fdict = {
             'WORD': self.sample_word,
             'LINE': self.sample_line,
             'PARA': self.sample_para
         }
 
-        with open(fp, 'r') as f:
+        with open(self.corpora_fp, 'r') as f:
             self.txt = [l.strip() for l in f.readlines()]
 
     def check_symb_frac(self, txt, f=0.35):
@@ -91,8 +92,8 @@ class Corpora(object):
                     lines[i] = ' '.join(
                         words[first_word_index:first_word_index + nword[i]])
 
-                while len(
-                        lines[i]) > nchar_max:  #chop-off characters from end:
+                while len(lines[i]) > nchar_max:  
+                    #chop-off characters from end:
                     if not np.any([ch.isspace() for ch in lines[i]]):
                         lines[i] = ''
                     else:
@@ -105,8 +106,11 @@ class Corpora(object):
             return lines
 
     # main method
-    def sample_text(self, nline_max, nchar_max, kind='WORD'):
-        text = self.fdict[kind](nline_max, nchar_max)
+    def sample_text(self, nline_max, nchar_max):
+
+        # sample text:
+        text_type = sample_weighted(self.p_text)
+        text = self.fdict[text_type](nline_max, nchar_max)
         return text
 
     def sample_word(self, nline_max, nchar_max, niter=100):

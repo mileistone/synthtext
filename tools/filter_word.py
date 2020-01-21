@@ -48,8 +48,8 @@ if __name__ == '__main__':
     nlines = 10000
     fp = sys.argv[1]
     alpha_words = get_alpha_word(fp)
-    alpha_words_shuffle = shuffle_word_order(alpha_words)
+    #alpha_words_shuffle = shuffle_word_order(alpha_words)
     corpora = gen_corpora(alpha_words, min_len, max_len, nlines)
-    save2file(corpora, 'alpha_words')
-    corpora = gen_corpora(alpha_words_shuffle, min_len, max_len, nlines)
-    save2file(corpora, 'alpha_words_shuffle')
+    save2file(corpora, 'coca_alpha_words.txt')
+    #corpora = gen_corpora(alpha_words_shuffle, min_len, max_len, nlines)
+    #save2file(corpora, 'alpha_words_shuffle')

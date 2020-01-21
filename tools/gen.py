@@ -61,14 +61,16 @@ def get_all_crops(idict):
     return valid_crops, valid_words
 
 
-def save_crops(imgname, res, save_folder):
+def save_crops(imgname, res, save_dir):
     ninstance = len(res)
     for ii in range(ninstance):
         crops, words = get_all_crops(res[ii])
         ncrops = len(crops)
         for jj in range(ncrops):
-            fp = '%s/%s_ins%d_crop%d_%s.png' % (save_folder, \
+            fp = '%s/%s_ins%d_crop%d_%s.png' % (save_dir, \
                     imgname.replace('.jpg', ''), ii, jj, words[jj])
+            print(fp)
+            #break
             im = Image.fromarray(crops[jj])
             im.save(fp)
 
@@ -92,13 +94,13 @@ def main():
     ## Define some configuration variables:
     viz = False
     nimg = -1  # no. of images to use for generation (-1 to use all available):
-    ninstance = 3  # no. of times to use the same image
+    ninstance = 600  # no. of times to use the same image
     secs_per_img = 5  #max time per image in seconds
 
     # path to the data-file, containing image, depth and segmentation:
-    resource_dir = 'data'
-    save_folder = 'output'
-    in_fp = osp.join(resource_dir, 'dset.h5')
+    data_dir = 'data'
+    save_dir = '%s/output' % data_dir
+    in_fp = osp.join(data_dir, 'dset.h5')
     # url of the data (google-drive public file):
     out_fp = 'results/SynthText.h5'
 
@@ -133,11 +135,11 @@ def main():
         area = in_db['seg'][imname].attrs['area']
         label = in_db['seg'][imname].attrs['label']
 
-        print('%d of %d' % (i, nimg - 1))
+        print('Imge %d/%d' % (i, nimg - 1))
         res = render(engine, img, depth, seg, area, label, ninstance, viz)
 
         if len(res) > 0:
-            save_crops(imname, res, save_folder)
+            save_crops(imname, res, save_dir)
             # non-empty : successful in placing text:
             #add_res_to_db(imname, res, out_db)
     in_db.close()

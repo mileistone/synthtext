@@ -334,8 +334,9 @@ class Renderer(object):
             ibb = []
 
             # process regions:
-            num_txt_regions = len(reg_idx) 
-            reg_range = np.arange(self.num_repeat * num_txt_regions) % num_txt_regions
+            num_txt_regions = len(reg_idx)
+            reg_range = np.arange(
+                self.num_repeat * num_txt_regions) % num_txt_regions
             placed = False
             for idx in reg_range:
                 ireg = reg_idx[idx]
@@ -368,13 +369,13 @@ class Renderer(object):
                     itext.append(text)
                     ibb.append(bb)
 
-                    print('-----<text-----')
-                    if curve_flag:
-                        print('####curve####')
-                    else:
-                        print('####not curve####')
-                    print(text)
-                    print('-----text>-----')
+                    #print('-----<text-----')
+                    #if curve_flag:
+                    #    print('####curve####')
+                    #else:
+                    #    print('####not curve####')
+                    #print(text)
+                    #print('-----text>-----')
 
                     # at least 1 word was placed in this instance:
                     idict['img'] = img
@@ -387,9 +388,9 @@ class Renderer(object):
                 if viz:
 
                     #min_area_rect = idict['wordBB']
-                    #texts = [] 
+                    #texts = []
                     #for line in idict['txt']:
-                    #    segs = line.split() 
+                    #    segs = line.split()
                     #    texts.extend(segs)
                     #four_points, extreme_points = get_bounding_rect(min_area_rect)
                     #crops, valid_flags = get_crops(img, extreme_points)
